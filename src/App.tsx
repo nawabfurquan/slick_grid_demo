@@ -1,12 +1,11 @@
 
 import './App.css';
-import DataGrid from './DataGrid';
+import SlickGridDemo from './SlickGridDemo';
 
 const App: React.FC = () => {
   return (
-    <div>
-      <h1>SlickGrid React Demo</h1>
-      <DataGrid />
+    <div style={{ width: "100%", height: "100%" }}>
+      <SlickGridDemo />
     </div>
   );
 }
