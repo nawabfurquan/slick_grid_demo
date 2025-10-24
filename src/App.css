@@ -6,6 +6,11 @@
   /* text-align: center; */
 }
 
+.slickgrid-container {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
 /* SlickGrid cell borders */
 .slick-cell {
   border-right: 1px solid #ddd !important;
@@ -19,6 +24,10 @@
 
 .slick-row {
   border-bottom: 1px solid #ddd !important;
+}
+
+.slick-empty-data-warning {
+  display: none !important;
 }
 
 /* For dark mode, adjust border colors */
