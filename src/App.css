@@ -14,17 +14,17 @@
 /* SlickGrid cell borders */
 .slick-cell {
   border-right: 1px solid #ddd !important;
-  border-bottom: 1px solid #ddd !important;
+  /* border-bottom: 1px solid #ddd !important; */
 }
 
 .slick-header-column {
   border-right: 1px solid #ddd !important;
-  border-bottom: 2px solid #ccc !important;
+  /* border-bottom: 2px solid #ccc !important; */
 }
 
-.slick-row {
+/* .slick-row {
   border-bottom: 1px solid #ddd !important;
-}
+} */
 
 .slick-empty-data-warning {
   display: none !important;
@@ -34,15 +34,15 @@
 @media (prefers-color-scheme: dark) {
   .slick-cell {
     border-right: 1px solid #444 !important;
-    border-bottom: 1px solid #444 !important;
+    /* border-bottom: 1px solid #444 !important; */
   }
 
   .slick-header-column {
     border-right: 1px solid #444 !important;
-    border-bottom: 2px solid #555 !important;
+    /* border-bottom: 2px solid #555 !important; */
   }
 
-  .slick-row {
+  /* .slick-row {
     border-bottom: 1px solid #444 !important;
-  }
+  } */
 }
