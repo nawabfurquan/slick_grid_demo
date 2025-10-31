@@ -12,14 +12,27 @@ export type SortColumn = {
 };
 
 const SlickGridDemo = () => {
-  const { columnData, rowCount } = useMockDataStore();
+  const { columnData } = useMockDataStore();
   const reactGridRef = useRef<SlickgridReactInstance | null>(null);
   const [sortColumn, setSortColumn] = useState<SortColumn>();
   const sortedFilteredIndices = useSortedFilteredIndices(sortColumn);
+  const columnDataRef = useRef(columnData);
 
   useEffect(() => {
-    console.log("rendering slick grid demo")
-    });
+    columnDataRef.current = columnData;
+  }, [columnData]);
+
+  // Clear sort when columnData changes
+  useEffect(() => {
+    console.log("Column data changed, clearing sort");
+    setSortColumn(undefined);
+    
+    const grid = reactGridRef.current?.slickGrid;
+    if (grid) {
+      grid.setSortColumns([]);
+    }
+  }, [columnData]);
+
   const columnDefs = useMemo(() => {
     const colDefs: Column[] = [];
     for (const col of columnData) {
@@ -36,9 +49,9 @@ const SlickGridDemo = () => {
   }, [columnData]);
 
   const dataProvider = useMemo(() => {
-    console.log('Creating virtual data provider...');
+    console.log('Creating data provider');
     return new SGAdapter(columnData, sortedFilteredIndices);
-  }, [rowCount, columnData, sortedFilteredIndices]);
+  }, [columnData, sortedFilteredIndices]);
 
   const options = useMemo<GridOption>(() => ({
     darkMode: true,
@@ -56,45 +69,69 @@ const SlickGridDemo = () => {
     rowHeight: 30,
     rowTopOffsetRenderType: 'top',
     frozenColumn: 0,
-  }), []);
+  }), [columnData]);
 
   useEffect(() => {
     const grid = reactGridRef.current?.slickGrid;
     if (grid && dataProvider) {
       grid.setData(dataProvider, true);
       grid.render();
-      console.log(`Grid updated with ${rowCount.toLocaleString()} rows`);
+      console.log(`Grid updated`);
     }
-  }, [dataProvider, rowCount]);
-  
+  }, [dataProvider]);
+
+  useEffect(() => {
+    const grid = reactGridRef.current?.slickGrid;
+    if (!grid) return;
+
+    const sortHandler: any = grid.onSort.subscribe((_e, args) => {
+      
+      if ("sortCol" in args && args.sortCol && "sortAsc" in args && 
+          args.sortAsc !== null && args.sortAsc !== undefined) {
+        // Use ref to get current columnData
+        const col = columnDataRef.current.find((c) => c.name === args.sortCol?.field);
+        if (col) {
+          console.log("Setting sort:", col.name, args.sortAsc ? "asc" : "desc");
+          setSortColumn({
+            column: col,
+            ascending: args.sortAsc,
+          });
+        }
+      }
+    });
+
+    const removeSortHandler = grid.getPubSubService()?.subscribe("onHeaderMenuCommand", ({command}) => {
+      if (command === "clear-sort") {
+        console.log("Clear sort");
+        setSortColumn(undefined);
+      }
+    });
+
+    const clearAllSortHandler = grid.getPubSubService()?.subscribe("onGridMenuCommand", ({command}) => {
+      if (command === "clear-sorting") {
+        console.log("Clear All sort");
+        setSortColumn(undefined);
+      }
+    });
+
+    // Cleanup
+    return () => {
+      sortHandler?.unsubscribe();
+      removeSortHandler?.unsubscribe();
+      clearAllSortHandler?.unsubscribe();
+    };
+  }, []);
+
   const handleGridCreated = useCallback((e: CustomEvent<SlickgridReactInstance>) => {
+    console.log("Grid created");
     reactGridRef.current = e.detail;
     
     const grid = e.detail.slickGrid;
-    if (grid) {
+    if (grid && dataProvider) {
       grid.setData(dataProvider, true);
       grid.render();
-
-      grid.onSort.subscribe((e, args) => {
-        console.log("Sort subscribe triggered", args);
-        if ("sortCol" in args && args.sortCol && "sortAsc" in args && args.sortAsc !== null && args.sortAsc !== undefined) {
-          const col = columnData.find((c) => c.name === args.sortCol?.field);
-          if (col) {
-            setSortColumn({
-              column: col,
-              ascending: args.sortAsc,
-            })
-          }
-        } 
-        else {
-          console.log("Clearing sort");
-          setSortColumn(undefined);
-          grid.setSortColumns([]);
-        }
-      });
-      console.log(`Grid initialized with ${rowCount.toLocaleString()} rows`);
     }
-  }, [dataProvider, columnData, rowCount]);
+  }, [dataProvider]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>

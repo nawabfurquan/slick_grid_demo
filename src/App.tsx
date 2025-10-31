@@ -1,7 +1,6 @@
 import './App.css';
 import useMockDataStore from './hooks/useMockDataStore';
 import SlickGridDemo from './components/SlickGridDemo';
-import AgGridDemo from './components/AgGridDemo';
 import AgGridInfiniteDemo from './components/AgGridInfiniteDemo';
 
 const App: React.FC = () => {

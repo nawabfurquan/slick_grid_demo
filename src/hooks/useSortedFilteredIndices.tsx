@@ -1,11 +1,9 @@
 import { useMemo } from "react";
 import useFilteredIndices from "./useFilteredIndices";
-import useMockDataStore from "./useMockDataStore";
 import type { SortColumn } from "../components/SlickGridDemo";
 
 const useSortedFilteredIndices = (sortColumn: SortColumn | undefined) => {
-    const { rowCount } = useMockDataStore();
-    const filteredIndices = useFilteredIndices(rowCount);
+    const filteredIndices = useFilteredIndices();
     const sortedFilteredIndices = useMemo(() => {
         const indices = filteredIndices.slice();
 

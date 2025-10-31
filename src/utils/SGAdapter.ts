@@ -33,6 +33,14 @@ class SGAdapter {
     getItemMetadata(_index: number): any {
       return null;
     }
+
+    sort() {
+
+    }
+
+    reSort() {
+      
+    }
 }
 
 export default SGAdapter;
