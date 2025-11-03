@@ -34,12 +34,17 @@ class SGAdapter {
       return null;
     }
 
+    // Avoid calling the default methods for sorting and filtering
     sort() {
 
     }
 
     reSort() {
       
+    }
+
+    refresh () {
+
     }
 }
 

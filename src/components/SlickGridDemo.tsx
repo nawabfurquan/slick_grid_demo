@@ -5,6 +5,7 @@ import SGAdapter from '../utils/SGAdapter';
 import useMockDataStore from '../hooks/useMockDataStore';
 import useSortedFilteredIndices from '../hooks/useSortedFilteredIndices';
 import type { ColumnData } from '../utils/MockDataStore';
+import type { FilterColumn } from '../hooks/useFilteredIndices';
 
 export type SortColumn = {
   column: ColumnData;
@@ -15,21 +16,27 @@ const SlickGridDemo = () => {
   const { columnData } = useMockDataStore();
   const reactGridRef = useRef<SlickgridReactInstance | null>(null);
   const [sortColumn, setSortColumn] = useState<SortColumn>();
-  const sortedFilteredIndices = useSortedFilteredIndices(sortColumn);
+  const [filters, setFilters] = useState<FilterColumn[]>([]);
+  const sortedFilteredIndices = useSortedFilteredIndices(sortColumn, filters);
   const columnDataRef = useRef(columnData);
 
   useEffect(() => {
     columnDataRef.current = columnData;
   }, [columnData]);
 
-  // Clear sort when columnData changes
+  // Clear sort and filters when columnData changes
   useEffect(() => {
-    console.log("Column data changed, clearing sort");
+    console.log("Column data changed, clearing sort and filters");
     setSortColumn(undefined);
+    setFilters([]);
     
     const grid = reactGridRef.current?.slickGrid;
     if (grid) {
       grid.setSortColumns([]);
+    }
+    const filterService = reactGridRef.current?.filterService;
+    if (filterService) {
+      filterService.clearFilters();
     }
   }, [columnData]);
 
@@ -69,7 +76,7 @@ const SlickGridDemo = () => {
     rowHeight: 30,
     rowTopOffsetRenderType: 'top',
     frozenColumn: 0,
-    // enableFiltering: true,
+    enableFiltering: true,
   }), []);
 
   useEffect(() => {
@@ -101,7 +108,7 @@ const SlickGridDemo = () => {
       }
     });
 
-    const removeSortHandler = grid.getPubSubService()?.subscribe("onHeaderMenuCommand", ({command}) => {
+    const removeSortHandler = grid.getPubSubService()?.subscribe("onHeaderMenuCommand", ({command}) => {      
       if (command === "clear-sort") {
         console.log("Clear sort");
         setSortColumn(undefined);
@@ -115,11 +122,44 @@ const SlickGridDemo = () => {
       }
     });
 
+    const filterChangedHandler = grid.getPubSubService()?.subscribe("onFilterChanged", () => {
+      const filterService = reactGridRef.current?.filterService;
+      if (!filterService) return;
+
+      const currentFilters = filterService.getCurrentLocalFilters();
+      const filterColumn: FilterColumn[] = [];
+
+      for (const filter of currentFilters) {
+        // Find the column
+        const col = columnDataRef.current.find((c) => c.name === filter.columnId);
+        if (col && filter.searchTerms && filter.searchTerms.length > 0) {
+          // Set the filter column
+          if (filter.searchTerms.length > 0) {
+            filterColumn.push({
+              column: col,
+              operator: filter.operator || '',
+              searchTerms: filter.searchTerms,
+            });
+          }
+        }
+      }
+
+      console.log("Filters changed:", filterColumn);
+      setFilters(filterColumn);
+    });
+
+    const filterClearedHandler = grid.getPubSubService()?.subscribe("onFilterCleared", () => {
+      console.log("Filters cleared");
+      setFilters([]);
+    });
+
     // Cleanup
     return () => {
       sortHandler?.unsubscribe();
       removeSortHandler?.unsubscribe();
       clearAllSortHandler?.unsubscribe();
+      filterChangedHandler?.unsubscribe();
+      filterClearedHandler?.unsubscribe();
     };
   }, []);
 

@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgGridReact } from 'ag-grid-react';
 import { themeQuartz, colorSchemeDark } from 'ag-grid-community';
-import type { ColDef, GridReadyEvent, IGetRowsParams, SortChangedEvent } from 'ag-grid-community';
+import type { ColDef, FilterChangedEvent, GridReadyEvent, IGetRowsParams, SortChangedEvent } from 'ag-grid-community';
 import useMockDataStore from "../hooks/useMockDataStore";
 import useSortedFilteredIndices from "../hooks/useSortedFilteredIndices";
 import type { SortColumn } from "./SlickGridDemo";
+import type { FilterColumn } from "../hooks/useFilteredIndices";
 
 
 const AgGridInfiniteDemo = () => {
     const gridRefClient = useRef<AgGridReact>(null);
     const { columnData, rowCount } = useMockDataStore();
     const [sortColumn, setSortColumn] = useState<SortColumn>();
-    const sortedFilteredIndices = useSortedFilteredIndices(sortColumn);
+    const [filters, setFilters] = useState<FilterColumn[]>();
+    const sortedFilteredIndices = useSortedFilteredIndices(sortColumn, filters);
     const columnDataRef = useRef(columnData);
 
     useEffect(() => {
@@ -21,6 +23,7 @@ const AgGridInfiniteDemo = () => {
     useEffect(() => {
         console.log("Column data changed, clearing sort");
         setSortColumn(undefined);
+        setFilters([]);
         
         const api = gridRefClient.current?.api;
         if (api) {
@@ -28,6 +31,7 @@ const AgGridInfiniteDemo = () => {
                 defaultState: { sort: null },
                 state: []
             });
+            api.setFilterModel(null);
         }
       }, [columnData]);
 
@@ -39,6 +43,7 @@ const AgGridInfiniteDemo = () => {
                 field: col.name,
                 pinned: col.name === 'id' ? 'left' : undefined,
                 sortable: true,
+                filter: col.name === 'id' ? false : true,
             })
         }
         return colDefs;
@@ -99,6 +104,65 @@ const AgGridInfiniteDemo = () => {
         }
     }, []);
 
+    const onFilterChanged = useCallback((e: FilterChangedEvent) => {
+        const filterModel = e.api.getFilterModel();
+        const filterColumn: FilterColumn[] = [];
+
+        for (const [colId, filterValue] of Object.entries(filterModel)) {
+            const col = columnDataRef.current.find((c) => c.name === colId);
+            if (!col || !filterValue) continue;
+
+            let operator = '';
+            let searchTerms: (string | number | null)[] = [];
+
+            if (typeof filterValue === 'object' && 'filter' in filterValue) {
+                const filterType = filterValue.type || 'equals';
+                
+                // Map AG Grid operators to our operators
+                switch (filterType) {
+                    case 'equals':
+                        operator = '=';
+                        break;
+                    case 'notEqual':
+                        operator = '!=';
+                        break;
+                    case 'greaterThan':
+                        operator = '>';
+                        break;
+                    case 'greaterThanOrEqual':
+                        operator = '>=';
+                        break;
+                    case 'lessThan':
+                        operator = '<';
+                        break;
+                    case 'lessThanOrEqual':
+                        operator = '<=';
+                        break;
+                    case 'contains':
+                    case 'startsWith':
+                    case 'endsWith':
+                    default:
+                        operator = 'contains';
+                        break;
+                }
+
+                if (filterValue.filter !== null && filterValue.filter !== undefined) {
+                    searchTerms = [filterValue.filter];
+                }
+            }
+
+            if (searchTerms.length > 0 && searchTerms[0] !== null && searchTerms[0] !== undefined) {
+                filterColumn.push({
+                    column: col,
+                    operator,
+                    searchTerms,
+                });
+            }
+        }
+        console.log("Filters changed:", filterColumn);
+        setFilters(filterColumn);
+    }, []);
+
 
     const defaultColDef = useMemo<ColDef>(() => ({
         width: 120,
@@ -124,6 +188,7 @@ const AgGridInfiniteDemo = () => {
                 maxBlocksInCache={10} 
                 onGridReady={onGridReady}
                 onSortChanged={onSortChanged}
+                onFilterChanged={onFilterChanged}
             />
         </div>
         </div>
