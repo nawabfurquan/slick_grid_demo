@@ -69,7 +69,8 @@ const SlickGridDemo = () => {
     rowHeight: 30,
     rowTopOffsetRenderType: 'top',
     frozenColumn: 0,
-  }), [columnData]);
+    // enableFiltering: true,
+  }), []);
 
   useEffect(() => {
     const grid = reactGridRef.current?.slickGrid;

@@ -62,7 +62,7 @@ const AgGridInfiniteDemo = () => {
                 params.successCallback(rowBlock, sortedFilteredIndices.length)
             }
         };
-    }, [columnData, rowCount, sortedFilteredIndices]);
+    }, [columnData, sortedFilteredIndices]);
 
     const onGridReady = useCallback((params: GridReadyEvent) => {
         params.api.setGridOption('datasource', datasource);
@@ -70,12 +70,12 @@ const AgGridInfiniteDemo = () => {
 
     useEffect(() => {
         const api = gridRefClient.current?.api;
-        if (api && columnData.length > 0) {
+        if (api && datasource) {
             api.setGridOption('datasource', datasource);
 
             api.refreshInfiniteCache();
         }
-    }, [datasource, columnData]);
+    }, [datasource]);
 
     const onSortChanged = useCallback((e: SortChangedEvent<any, any>) => {
         if (e.columns && e.columns.length > 0) {
@@ -104,7 +104,9 @@ const AgGridInfiniteDemo = () => {
         width: 120,
         resizable: true,
     }), []);
+
     const myTheme = themeQuartz.withPart(colorSchemeDark);
+
     return (
         <div style={{ display: 'flex', flexDirection: "column", height: '700px', paddingBottom: "100px" }}>
         <h2 style={{ marginBottom: '15px' }}>AG Grid Demo</h2>
